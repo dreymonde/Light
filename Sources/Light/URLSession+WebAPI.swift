@@ -69,7 +69,7 @@ extension ReadOnlyStorageProtocol where Value == (HTTPURLResponse, Data) {
     
 }
 
-extension WebAPI {
+extension WebAPIProtocol {
     
     public init(baseURL: URL,
                 urlSession: URLSession,
@@ -77,7 +77,8 @@ extension WebAPI {
         let urlSessionProvider = urlSession.asReadOnlyStorage()
             .usingURLRequestKeys()
             .droppingResponse()
-        self.init(baseURL: baseURL, networkProvider: urlSessionProvider, modifyRequest: modifyRequest)
+        let webAPI = WebAPI(baseURL: baseURL, networkProvider: urlSessionProvider, modifyRequest: modifyRequest)
+        self.init(webAPI: webAPI)
     }
     
     public init(baseURL: URL,
