@@ -14,26 +14,27 @@ public struct WebAPI : ReadOnlyStorageProtocol {
         return underlying.storageName + "_webapi"
     }
     
-    private let underlying: ReadOnlyStorage<APIPath, Data>
+    private let underlying: ReadOnlyStorage<URLRequest, Data>
     
-    public init(provider: ReadOnlyStorage<APIPath, Data>) {
+    public init(provider: ReadOnlyStorage<URLRequest, Data>) {
         self.underlying = provider
     }
     
-    public init(baseURL: URL,
-                networkProvider: ReadOnlyStorage<URLRequest, Data>,
-                modifyRequest: @escaping (inout URLRequest) -> Void) {
-        self.underlying = networkProvider
-            .mapKeys(to: APIPath.self, { path in
-                var request = URLRequest(url: baseURL.appendingPath(path))
-                modifyRequest(&request)
-                print(request.url!)
-                return request
-            })
+    public func retrieve(forKey request: URLRequest, completion: @escaping (Result<Data>) -> ()) {
+        underlying.retrieve(forKey: request, completion: completion)
     }
     
-    public func retrieve(forKey path: APIPath, completion: @escaping (Result<Data>) -> ()) {
-        underlying.retrieve(forKey: path, completion: completion)
+}
+
+extension ReadOnlyStorageProtocol where Key == URLRequest {
+    
+    public func baseURL(_ baseURL: URL,
+                        modifyRequest: @escaping (inout URLRequest) -> () = { _ in }) -> ReadOnlyStorage<APIPath, Value> {
+        return self.mapKeys(to: APIPath.self, { (path) -> URLRequest in
+            var request = URLRequest(url: baseURL.appendingPath(path))
+            modifyRequest(&request)
+            return request
+        })
     }
     
 }
