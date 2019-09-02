@@ -10,31 +10,42 @@ import Shallows
 
 public struct WebAPI : ReadOnlyStorageProtocol {
     
+    public enum Request {
+        case url(URL)
+        case urlRequest(URLRequest)
+    }
+    
+    public struct Response {
+        public var httpUrlResponse: HTTPURLResponse
+        public var data: Data
+    }
+    
     public var storageName: String {
         return underlying.storageName + "_webapi"
     }
     
-    private let underlying: ReadOnlyStorage<URLRequest, Data>
+    private let underlying: ReadOnlyStorage<Request, Response>
+    public let dataOnly: ReadOnlyStorage<Request, Data>
     
-    public init(provider: ReadOnlyStorage<URLRequest, Data>) {
+    public init(provider: ReadOnlyStorage<Request, Response>) {
         self.underlying = provider
+        self.dataOnly = provider
+            .mapValues { $0.data }
     }
     
-    public func retrieve(forKey request: URLRequest, completion: @escaping (Result<Data>) -> ()) {
-        underlying.retrieve(forKey: request, completion: completion)
+    public func retrieve(forKey request: Request) -> ShallowsFuture<Response> {
+        return underlying.retrieve(forKey: request)
     }
-    
 }
 
-extension ReadOnlyStorageProtocol where Key == URLRequest {
+extension ReadOnlyStorageProtocol where Key == WebAPI.Request {
     
-    public func baseURL(_ baseURL: URL,
-                        modifyRequest: @escaping (inout URLRequest) -> () = { _ in }) -> ReadOnlyStorage<APIPath, Value> {
-        return self.mapKeys(to: APIPath.self, { (path) -> URLRequest in
-            var request = URLRequest(url: baseURL.appendingPath(path))
-            modifyRequest(&request)
-            return request
-        })
+    public func retrieve(forKey url: URL) -> ShallowsFuture<Value> {
+        return retrieve(forKey: .url(url))
+    }
+    
+    public func retrieve(forKey urlRequest: URLRequest) -> ShallowsFuture<Value> {
+        return retrieve(forKey: .urlRequest(urlRequest))
     }
     
 }

@@ -12,7 +12,7 @@ let package = Package(
             targets: ["Light"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/dreymonde/Shallows.git", from: "0.7.0"),
+        .package(url: "https://github.com/dreymonde/Shallows.git", .branch("swift5.1")),
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
     ],

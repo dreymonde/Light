@@ -22,13 +22,16 @@ struct Currency : Decodable {
 class LightTests: XCTestCase {
     
     func testWebAPI() throws {
-        let bitcoinAPI = WebAPI(baseURL: URL.init(string: "https://api.coinmarketcap.com/v1/")!,
-                                urlSessionConfiguration: .ephemeral)
-            .singleKey("ticker/bitcoin/")
-            .mapJSONObject(DecodableBox<Currency>.self)
-            .mapValues({ try $0.values.first.unwrap() })
-            .makeSyncStorage()
-        let bitcoin = try bitcoinAPI.retrieve()
+        
+        let bitcoinAPI = WebAPI(urlSessionConfiguration: .ephemeral)
+            .mapURLKeys()
+            .mapStringKeys()
+            .singleKey("https://api.coinmarketcap.com/v1/ticker/bitcoin/")
+            .droppingResponse()
+            .mapJSONObject([Currency].self)
+            .mapValues({ try $0.first.unwrap() })
+        
+        let bitcoin = try bitcoinAPI.retrieve().waitValue()
         XCTAssertEqual(bitcoin.id, "bitcoin")
         XCTAssertEqual(bitcoin.name, "Bitcoin")
         print(bitcoin.price_usd)

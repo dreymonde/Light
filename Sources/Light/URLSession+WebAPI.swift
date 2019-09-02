@@ -10,32 +10,31 @@ import Shallows
 
 extension URLSession : ReadOnlyStorageProtocol {
     
-    public enum Key {
-        case url(URL)
-        case urlRequest(URLRequest)
-    }
+    public typealias Request = WebAPI.Request
+    public typealias Response = WebAPI.Response
     
-    public enum CacheError : Error {
+    public enum LightError : Error {
         case taskError(Error)
         case responseIsNotHTTP(URLResponse?)
         case noData
     }
     
-    public func retrieve(forKey request: Key, completion: @escaping (Result<(HTTPURLResponse, Data)>) -> ()) {
+    public func retrieve(forKey request: Request) -> Future<Response, Error> {
+        let promise = Promise<Response, Error>()
         let completion: (Data?, URLResponse?, Error?) -> () = { (data, response, error) in
             if let error = error {
-                completion(.failure(CacheError.taskError(error)))
+                promise.fail(error: LightError.taskError(error))
                 return
             }
             guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(CacheError.responseIsNotHTTP(response)))
+                promise.fail(error: LightError.responseIsNotHTTP(response))
                 return
             }
             guard let data = data else {
-                completion(.failure(CacheError.noData))
+                promise.fail(error: LightError.noData)
                 return
             }
-            completion(.success((httpResponse, data)))
+            promise.succeed(value: .init(httpUrlResponse: httpResponse, data: data))
         }
         let task: URLSessionTask
         switch request {
@@ -45,26 +44,35 @@ extension URLSession : ReadOnlyStorageProtocol {
             task = self.dataTask(with: request, completionHandler: completion)
         }
         task.resume()
+        return promise.future
     }
     
 }
 
-extension ReadOnlyStorageProtocol where Key == URLSession.Key {
+extension ReadOnlyStorageProtocol where Key == WebAPI.Request {
     
-    public func usingURLKeys() -> ReadOnlyStorage<URL, Value> {
+    public func mapURLKeys() -> ReadOnlyStorage<URL, Value> {
         return mapKeys({ .url($0) })
     }
     
-    public func usingURLRequestKeys() -> ReadOnlyStorage<URLRequest, Value> {
+    public func mapURLRequestKeys() -> ReadOnlyStorage<URLRequest, Value> {
         return mapKeys({ .urlRequest($0) })
     }
     
 }
 
-extension ReadOnlyStorageProtocol where Value == (HTTPURLResponse, Data) {
+extension ReadOnlyStorageProtocol where Key == URL {
+    
+    public func mapStringKeys() -> ReadOnlyStorage<String, Value> {
+        return mapKeys({ try URL(string: $0).unwrap() })
+    }
+    
+}
+
+extension ReadOnlyStorageProtocol where Value == WebAPI.Response {
     
     public func droppingResponse() -> ReadOnlyStorage<Key, Data> {
-        return mapValues({ $0.1 })
+        return mapValues({ $0.data })
     }
     
 }
@@ -72,10 +80,7 @@ extension ReadOnlyStorageProtocol where Value == (HTTPURLResponse, Data) {
 extension WebAPIProtocol {
     
     public init(urlSession: URLSession) {
-        let urlSessionProvider = urlSession.asReadOnlyStorage()
-            .usingURLRequestKeys()
-            .droppingResponse()
-        let webAPI = WebAPI(provider: urlSessionProvider)
+        let webAPI = WebAPI(provider: urlSession.asReadOnlyStorage())
         self.init(webAPI: webAPI)
     }
     
