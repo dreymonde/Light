@@ -33,19 +33,19 @@ public struct WebAPI : ReadOnlyStorageProtocol {
             .mapValues { $0.data }
     }
     
-    public func retrieve(forKey request: Request) -> ShallowsFuture<Response> {
-        return underlying.retrieve(forKey: request)
+    public func retrieve(forKey request: Request, completion: @escaping (ShallowsResult<Response>) -> ()) {
+        underlying.retrieve(forKey: request, completion: completion)
     }
 }
 
 extension ReadOnlyStorageProtocol where Key == WebAPI.Request {
     
-    public func retrieve(forKey url: URL) -> ShallowsFuture<Value> {
-        return retrieve(forKey: .url(url))
+    public func retrieve(forKey url: URL, completion: @escaping (ShallowsResult<Value>) -> ()) {
+        retrieve(forKey: .url(url), completion: completion)
     }
     
-    public func retrieve(forKey urlRequest: URLRequest) -> ShallowsFuture<Value> {
-        return retrieve(forKey: .urlRequest(urlRequest))
+    public func retrieve(forKey url: URLRequest, completion: @escaping (ShallowsResult<Value>) -> ()) {
+        retrieve(forKey: .urlRequest(url), completion: completion)
     }
     
 }

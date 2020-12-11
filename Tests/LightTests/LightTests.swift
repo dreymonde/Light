@@ -30,8 +30,9 @@ class LightTests: XCTestCase {
             .droppingResponse()
             .mapJSONObject([Currency].self)
             .mapValues({ try $0.first.unwrap() })
+            .makeSyncStorage()
         
-        let bitcoin = try bitcoinAPI.retrieve().waitValue()
+        let bitcoin = try bitcoinAPI.retrieve()
         XCTAssertEqual(bitcoin.id, "bitcoin")
         XCTAssertEqual(bitcoin.name, "Bitcoin")
         print(bitcoin.price_usd)

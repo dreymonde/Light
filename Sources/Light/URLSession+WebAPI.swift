@@ -19,34 +19,31 @@ extension URLSession : ReadOnlyStorageProtocol {
         case noData
     }
     
-    public func retrieve(forKey request: Request) -> Future<Response, Error> {
-        let promise = Promise<Response, Error>()
-        let completion: (Data?, URLResponse?, Error?) -> () = { (data, response, error) in
+    public func retrieve(forKey request: Request, completion: @escaping (ShallowsResult<Response>) -> ()) {
+        let completionHandler: (Data?, URLResponse?, Error?) -> () = { (data, response, error) in
             if let error = error {
-                promise.fail(error: LightError.taskError(error))
+                completion(fail(with: LightError.taskError(error)))
                 return
             }
             guard let httpResponse = response as? HTTPURLResponse else {
-                promise.fail(error: LightError.responseIsNotHTTP(response))
+                completion(fail(with: LightError.responseIsNotHTTP(response)))
                 return
             }
             guard let data = data else {
-                promise.fail(error: LightError.noData)
+                completion(fail(with: LightError.noData))
                 return
             }
-            promise.succeed(value: .init(httpUrlResponse: httpResponse, data: data))
+            completion(succeed(with: .init(httpUrlResponse: httpResponse, data: data)))
         }
         let task: URLSessionTask
         switch request {
         case .url(let url):
-            task = self.dataTask(with: url, completionHandler: completion)
+            task = self.dataTask(with: url, completionHandler: completionHandler)
         case .urlRequest(let request):
-            task = self.dataTask(with: request, completionHandler: completion)
+            task = self.dataTask(with: request, completionHandler: completionHandler)
         }
         task.resume()
-        return promise.future
     }
-    
 }
 
 extension ReadOnlyStorageProtocol where Key == WebAPI.Request {

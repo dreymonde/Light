@@ -2,21 +2,12 @@
   "object": {
     "pins": [
       {
-        "package": "Future",
-        "repositoryURL": "https://github.com/kean/FutureX.git",
-        "state": {
-          "branch": "da47aa0",
-          "revision": "da47aa06b25589e2678e996f19dd3960e3017a67",
-          "version": null
-        }
-      },
-      {
         "package": "Shallows",
         "repositoryURL": "https://github.com/dreymonde/Shallows.git",
         "state": {
-          "branch": "swift5.1",
-          "revision": "fc397d4cfed6cdc58468d40b2b8591403f0c8f94",
-          "version": null
+          "branch": null,
+          "revision": "6d38c0b88a4b17c4624eb4a2a6fd436dbe7e2b3b",
+          "version": "0.11.0"
         }
       }
     ]
