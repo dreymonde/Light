@@ -88,41 +88,49 @@ extension WebAPIProtocol {
     
 }
 
-public struct SmartProxy: Hashable, Codable {
+public struct HTTPProxy: Hashable, Codable {
     public var username: String
     public var password: String
-    public var serverDomain: String
-    public var portNumber: Int
+    public var host: String
+    public var port: Int
+    public var enableHTTPS: Bool
     
-    public init(username: String, password: String, serverDomain: String, portNumber: Int) {
+    init(
+        username: String,
+        password: String,
+        host: String,
+        port: Int,
+        enableHTTPS: Bool = true
+    ) {
         self.username = username
         self.password = password
-        self.serverDomain = serverDomain
-        self.portNumber = portNumber
+        self.host = host
+        self.port = port
+        self.enableHTTPS = enableHTTPS
     }
 }
 
 extension URLSessionConfiguration {
-    public func setSmartProxy(_ smartProxy: SmartProxy) {
+    public func setHTTPProxy(_ httpProxy: HTTPProxy) {
         connectionProxyDictionary = [
             kCFNetworkProxiesHTTPEnable: true,
-            "HTTPProxy": smartProxy.serverDomain,
-            "HTTPSProxy": smartProxy.serverDomain,
-            "HTTPSPort": smartProxy.portNumber,
-            "HTTPPort": smartProxy.portNumber,
-            "HTTPSEnable": true,
+            "HTTPProxy": httpProxy.host,
+            "HTTPSProxy": httpProxy.host,
+            "HTTPSPort": httpProxy.port,
+            "HTTPPort": httpProxy.port,
+            "HTTPSEnable": httpProxy.enableHTTPS,
             kCFProxyTypeKey: kCFProxyTypeHTTPS,
-            kCFProxyUsernameKey: smartProxy.username,
-            kCFProxyPasswordKey: smartProxy.password,
+            kCFProxyUsernameKey: httpProxy.username,
+            kCFProxyPasswordKey: httpProxy.password,
         ]
         
-        httpAdditionalHeaders = ["Proxy-Authorization": "Basic " + "\(smartProxy.username):\(smartProxy.password)".data(using: .utf8)!.base64EncodedString()]
+        httpAdditionalHeaders = ["Proxy-Authorization": "Basic " + "\(httpProxy.username):\(httpProxy.password)".data(using: .utf8)!.base64EncodedString()]
     }
 }
 
 extension WebAPIProtocol {
-    public static func smartProxy(_ smartProxy: SmartProxy, urlSessionConfiguration: URLSessionConfiguration) -> Self {
-        urlSessionConfiguration.setSmartProxy(smartProxy)
+    public static func withProxy(_ httpProxy: HTTPProxy, urlSessionConfiguration: URLSessionConfiguration) -> Self {
+        urlSessionConfiguration.setHTTPProxy(httpProxy)
         return Self(urlSessionConfiguration: urlSessionConfiguration)
     }
 }

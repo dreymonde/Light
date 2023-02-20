@@ -25,12 +25,14 @@ public struct WebAPI : ReadOnlyStorageProtocol {
     }
     
     private let underlying: ReadOnlyStorage<Request, Response>
-    public let dataOnly: ReadOnlyStorage<Request, Data>
+    
+    @available(*, deprecated, renamed: "droppingResponse()")
+    public var dataOnly: ReadOnlyStorage<Request, Data> {
+        underlying.mapValues { $0.data }
+    }
     
     public init(provider: ReadOnlyStorage<Request, Response>) {
         self.underlying = provider
-        self.dataOnly = provider
-            .mapValues { $0.data }
     }
     
     public func retrieve(forKey request: Request, completion: @escaping (ShallowsResult<Response>) -> ()) {
